@@ -1,0 +1,86 @@
+// Prisma Schema - To-Do List UKK PPLG
+// Dokumentasi: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ==========================================
+// Model User - Menyimpan data akun pengguna
+// ==========================================
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String   // Disimpan dalam bentuk hash (bcrypt)
+  createdAt DateTime @default(now())
+
+  // Relasi One-to-Many
+  categories Category[]
+  tasks      Task[]
+
+  @@map("users") // Nama tabel di database
+}
+
+// ===================================================
+// Model Category - Kategori/Label untuk tugas
+// ===================================================
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String
+  color String @default("#3B82F6") // Warna badge (hex)
+
+  // Foreign Key ke User
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relasi ke Task
+  tasks Task[]
+
+  @@map("categories")
+}
+
+// ===================================================
+// Model Task - Tabel inti manajemen tugas
+// ===================================================
+model Task {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?  @db.Text // Opsional, bisa panjang
+  status      Status   @default(PLANNING)
+  priority    Priority @default(MEDIUM)
+  dueDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign Key ke User
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Foreign Key ke Category (opsional)
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@map("tasks")
+}
+
+// ==========================================
+// Enum untuk Status dan Prioritas
+// ==========================================
+enum Status {
+  PLANNING
+  PROSES
+  SELESAI
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
